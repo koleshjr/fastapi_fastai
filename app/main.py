@@ -1,7 +1,7 @@
 #main fastapi app
 from fastapi import FastAPI, File, UploadFile
 from fastai.vision.all import *
-from utils import read_image, predict_hotdog
+from utils import read_image, predict_fruit
 from json_models.response import Response
 
 app = FastAPI()

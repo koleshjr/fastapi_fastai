@@ -1,41 +1,38 @@
+# Re-declare/import the AlbumentationsTransform class
 from typing import Dict
 from io import BytesIO
 import numpy as np
 from PIL import Image
 from fastai.vision.all import *
+from contextlib import contextmanager
+import pathlib
 
+# Fix the windows os issue
+@contextmanager
+def set_posix_windows():
+    posix_backup = pathlib.PosixPath
+    try:
+        pathlib.PosixPath = pathlib.WindowsPath
+        yield
+    finally:
+        pathlib.PosixPath = posix_backup
+
+# read the image 
 def read_image(file: bytes) -> PILImage:
-    img = Image.open(BytesIO(file))
-    fastimg = PILImage.create(np.array(img.convert('RGB')))
+    return file
 
-    return fastimg
-
-#Allows fastai to use albumentations out of the box
-class AlbumentationsTransform (RandTransform):
-    split_idx,order=None,2
-    def __init__(self, train_aug, valid_aug): store_attr()
-    
-    def before_call(self, b, split_idx):
-        self.idx = split_idx
-    
-    def encodes(self, img: PILImage):
-        if self.idx == 0:
-            aug_img = self.train_aug(image=np.array(img))['image']
-        else:
-            aug_img = self.valid_aug(image=np.array(img))['image']
-        return PILImage.create(aug_img)
+ 
 
 #predict function
-def predict_fruit(image) -> Dict:
-    path = Path()
-    learn = load_learner(path/'models/fruit_model_v2.pkl')
-    labels = learn.dls.vocab
-    pred, pred_idx, probs = learn.predict(img)
-    max_idx = probs.index(max(probs))
-    return {
-        "prediction": labels[max_idx],
-        "probability": probs[max_idx],
-    }
+def predict_fruit(image) -> Dict:      
+    EXPORT_PATH = pathlib.Path("models/fruit_model.pkl")
 
-    
-
+    with set_posix_windows():
+        learn = load_learner(EXPORT_PATH)
+        labels = learn.dls.vocab     
+        _, _, probs = learn.predict(image)
+        max_idx = torch.argmax(probs).item()
+        return {
+            "prediction": labels[max_idx],
+            "probability": probs[max_idx],
+        }
